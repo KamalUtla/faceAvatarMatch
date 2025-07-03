@@ -106,7 +106,7 @@ def show_main_page():
         "Batch Size",
         min_value=1,
         max_value=16,
-        value=8,
+        value=4,
         help="Number of avatars to compare at once. Higher values may be faster but less accurate."
     )
     
