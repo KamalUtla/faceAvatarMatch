@@ -93,6 +93,13 @@ def show_main_page():
         help="Upload a clear photo of yourself. Our AI will detect your gender and age group to find the most suitable avatars."
     )
     
+    # Clear best match if a new file is uploaded
+    if 'last_uploaded_filename' not in st.session_state:
+        st.session_state.last_uploaded_filename = None
+    if uploaded_file is not None and uploaded_file.name != st.session_state.last_uploaded_filename:
+        st.session_state.last_result = None
+        st.session_state.last_uploaded_filename = uploaded_file.name
+
     # Batch size slider
     st.subheader("⚙️ Configuration")
     batch_size = st.slider(
@@ -107,11 +114,28 @@ def show_main_page():
     
     # Process button
     if uploaded_file is not None:
-        # Display uploaded image
-        st.subheader("📷 Your Image")
-        image = Image.open(uploaded_file)
-        st.image(image, caption="Uploaded Image", width=250)
-        
+        # Display uploaded image and (if available) best match side by side
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Uploaded Image")
+            image = Image.open(uploaded_file)
+            st.image(image, caption="Uploaded Image", width=250)
+        with col2:
+            if 'last_result' in st.session_state and st.session_state.last_result is not None and 'best_match_metadata' in st.session_state.last_result:
+                metadata = st.session_state.last_result['best_match_metadata']
+                public_url = metadata.get('public_url')
+                if public_url:
+                    try:
+                        response = requests.get(public_url, timeout=10)
+                        response.raise_for_status()
+                        avatar_img = Image.open(io.BytesIO(response.content))
+                        st.subheader("Best Match Avatar")
+                        st.image(avatar_img, width=250)
+                    except Exception as e:
+                        st.error(f"Could not load avatar image: {e}")
+        # Show processing time below the images if available
+        if 'last_result' in st.session_state and st.session_state.last_result is not None and 'best_match_metadata' in st.session_state.last_result and 'last_processing_time' in st.session_state:
+            st.markdown(f'<div style="text-align:center; color:#888; margin-top:1rem;">Processing time: {st.session_state.last_processing_time:.2f}s</div>', unsafe_allow_html=True)
         # Process button
         if st.button("🎯 Find Best Avatar Match", type="primary"):
             process_image(uploaded_file, batch_size)
@@ -158,11 +182,9 @@ def process_image(uploaded_file, batch_size):
         end_time = time.time()
         total_time = end_time - start_time
         
-        # Display results with timing
-        display_results_v2(result, temp_image_path, total_time)
-        
-        # Store result in session state for visualization page
+        # Store result in session state for main page and visualization page
         st.session_state.last_result = result
+        st.session_state.last_processing_time = total_time
         
         progress_bar.progress(100)
         status_text.text(f"✅ Matching complete! (Time: {total_time:.2f}s)")
@@ -170,56 +192,13 @@ def process_image(uploaded_file, batch_size):
         # Clean up temporary file
         os.unlink(temp_image_path)
         
+        # Rerun to update UI and show best match
+        st.rerun()
+        
     except Exception as e:
         st.error(f"❌ Error during processing: {str(e)}")
         progress_bar.progress(0)
         status_text.text("Processing failed")
-
-def display_results_v2(result, user_image_path, total_time):
-    """Display the matching results for the new pipeline"""
-    
-    st.markdown('<div class="result-section">', unsafe_allow_html=True)
-    st.subheader("🏆 Best Match Found!")
-    
-    # Display timing information
-    st.markdown(f"""
-    <div class="stats-box">
-        <h4>⏱️ Processing Time</h4>
-        <h2>{total_time:.2f} seconds</h2>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Create two columns for side-by-side comparison
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown('<div class="image-container">', unsafe_allow_html=True)
-        st.subheader("Your Image")
-        if os.path.exists(user_image_path):
-            st.image(user_image_path, width=250)
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown('<div class="image-container">', unsafe_allow_html=True)
-        st.subheader("Best Avatar Match")
-        
-        # Only display the avatar image, no metadata
-        if result['best_match_metadata']:
-            metadata = result['best_match_metadata']
-            public_url = metadata.get('public_url')
-            if public_url:
-                try:
-                    response = requests.get(public_url, timeout=10)
-                    response.raise_for_status()
-                    avatar_img = Image.open(io.BytesIO(response.content))
-                    st.image(avatar_img, width=250, caption="Best Match Avatar")
-                except Exception as e:
-                    st.error(f"Could not load avatar image: {e}")
-        else:
-            st.error("Best match metadata not found")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 def show_visualization_page():
     """Page for tournament visualization"""
