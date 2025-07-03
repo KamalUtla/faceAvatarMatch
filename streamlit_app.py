@@ -203,7 +203,7 @@ def display_results_v2(result, user_image_path, total_time):
         st.markdown('<div class="image-container">', unsafe_allow_html=True)
         st.subheader("Best Avatar Match")
         
-        # Display metadata about the best match
+        # Display metadata about the best match (minimal, no blue box)
         if result['best_match_metadata']:
             metadata = result['best_match_metadata']
             public_url = metadata.get('public_url')
@@ -215,39 +215,16 @@ def display_results_v2(result, user_image_path, total_time):
                     st.image(avatar_img, width=250, caption="Best Match Avatar")
                 except Exception as e:
                     st.error(f"Could not load avatar image: {e}")
-            st.info(f"""
-            **Avatar ID:** {result['best_match_avatar_id']}
-            
-            **Gender:** {metadata.get('gender', 'N/A')}
-            **Age Group:** {metadata.get('age_group', 'N/A')}
+            # Show minimal metadata as plain text (not in a blue box)
+            st.markdown(f"""
+            **Avatar ID:** {result['best_match_avatar_id']}  
+            **Gender:** {metadata.get('gender', 'N/A')}  
+            **Age Group:** {metadata.get('age_group', 'N/A')}  
             **Filename:** {metadata.get('filename', 'N/A')}
             """)
         else:
             st.error("Best match metadata not found")
         st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Display processing statistics
-    st.markdown(f"""
-    <div class="stats-box">
-        <h4>📊 Processing Statistics</h4>
-        <p><strong>Total Avatars Processed:</strong> {result['metadata']['total_avatars_processed']}</p>
-        <p><strong>Total Rounds:</strong> {result['metadata']['total_rounds']}</p>
-        <p><strong>Batch Size:</strong> {result['metadata']['batch_size']}</p>
-        <p><strong>User Characteristics:</strong> {result['user_characteristics']['gender']} {result['user_characteristics']['age_group']}</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Display performance metrics if available
-    if 'performance_metrics' in result and result['performance_metrics']:
-        metrics = result['performance_metrics']
-        st.markdown(f"""
-        <div class="stats-box">
-            <h4>⚡ Performance Metrics</h4>
-            <p><strong>Download Time:</strong> {metrics.get('download_time', 0):.2f}s</p>
-            <p><strong>Avatars Downloaded:</strong> {metrics.get('avatars_downloaded', 0)}/{metrics.get('total_avatars_requested', 0)}</p>
-            <p><strong>Download Success Rate:</strong> {(metrics.get('avatars_downloaded', 0) / max(metrics.get('total_avatars_requested', 1), 1) * 100):.1f}%</p>
-        </div>
-        """, unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
