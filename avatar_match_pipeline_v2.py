@@ -8,6 +8,7 @@ from pathlib import Path
 from PIL import Image
 import base64
 import io
+import random
 
 from avatar_service import AvatarService
 from in_memory_llm_service import InMemoryLLMService
@@ -32,81 +33,83 @@ def base64_to_image(base64_str: str) -> Image.Image:
     return Image.open(io.BytesIO(img_data))
 
 def add_numbered_strip_to_image(image: Image.Image, number: int) -> Image.Image:
-    """Add a numbered strip to an image (in-memory version)"""
-    # Create a copy of the image
+    """Add a numbered strip to an image (in-memory version, 60px strip)"""
     img_with_number = image.copy()
-    
-    # Get image dimensions
     width, height = img_with_number.size
-    
-    # Create a new image with extra space for the number
-    new_height = height + 40  # Add 40 pixels for the number strip
+    new_height = height + 60  # Increased strip height
     new_image = Image.new('RGB', (width, new_height), (255, 255, 255))
-    
-    # Paste the original image
     new_image.paste(img_with_number, (0, 0))
-    
-    # Add number text
     from PIL import ImageDraw, ImageFont
-    
     draw = ImageDraw.Draw(new_image)
-    
-    # Try to use a default font, fallback to basic text
     try:
-        # Try to use a system font
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 28)
     except:
         try:
-            # Try another common font path
-            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 24)
+            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 28)
         except:
-            # Use default font
             font = ImageFont.load_default()
-    
-    # Calculate text position
     text = str(number)
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
     text_x = (width - text_width) // 2
-    text_y = height + 5
-    
-    # Draw text
+    text_y = height + (60 - (bbox[3] - bbox[1])) // 2
     draw.text((text_x, text_y), text, fill=(0, 0, 0), font=font)
-    
+    return new_image
+
+def add_label_strip_to_image(image: Image.Image, label: str) -> Image.Image:
+    """Add a labeled strip to an image (in-memory version, 60px strip)"""
+    img_with_label = image.copy()
+    width, height = img_with_label.size
+    new_height = height + 60
+    new_image = Image.new('RGB', (width, new_height), (255, 255, 255))
+    new_image.paste(img_with_label, (0, 0))
+    from PIL import ImageDraw, ImageFont
+    draw = ImageDraw.Draw(new_image)
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 28)
+    except:
+        try:
+            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 28)
+        except:
+            font = ImageFont.load_default()
+    bbox = draw.textbbox((0, 0), label, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_x = (width - text_width) // 2
+    text_y = height + (60 - (bbox[3] - bbox[1])) // 2
+    draw.text((text_x, text_y), label, fill=(0, 0, 0), font=font)
     return new_image
 
 def process_batch_in_memory(llm_service: InMemoryLLMService, avatar_service: AvatarService, 
                            user_image: Image.Image, batch_avatar_ids: List[str], 
                            avatar_images_cache: Dict[str, Image.Image]) -> Tuple[str, int]:
     """Process a single batch using in-memory images and return the best match avatar ID and its index"""
-    
-    # Get images from cache
     batch_images = []
     valid_avatar_ids = []
-    
     for avatar_id in batch_avatar_ids:
         if avatar_id in avatar_images_cache:
             batch_images.append(avatar_images_cache[avatar_id])
             valid_avatar_ids.append(avatar_id)
         else:
             print(f"Warning: Avatar {avatar_id} not found in cache, skipping")
-    
     if not batch_images:
-        # Fallback to first avatar if no images available
         return batch_avatar_ids[0], 0
-    
-    # Add numbered strips to avatar images for LLM identification
+    # Randomize avatar images and ids together
+    combined = list(zip(batch_images, valid_avatar_ids))
+    random.shuffle(combined)
+    batch_images, valid_avatar_ids = zip(*combined)
+    batch_images = list(batch_images)
+    valid_avatar_ids = list(valid_avatar_ids)
+    # Add numbered strips to randomized avatar images
     numbered_batch_images = []
     for i, image in enumerate(batch_images, 1):
         numbered_image = add_numbered_strip_to_image(image, i)
         numbered_batch_images.append(numbered_image)
-    
+    # Add 'Real Photo' strip to user image
+    user_image_with_label = add_label_strip_to_image(user_image, "Real Photo")
     # Get best match from LLM using numbered in-memory images
-    best_match_image, winner_index = llm_service.get_best_match_in_batch(user_image, numbered_batch_images)
-    
-    # Find the corresponding avatar ID
+    best_match_image, winner_index = llm_service.get_best_match_in_batch(user_image_with_label, numbered_batch_images)
+    # Map winner index back to correct avatar ID
     winner_avatar_id = valid_avatar_ids[winner_index]
-    
     return winner_avatar_id, winner_index
 
 def find_best_avatar_match_v2(user_image_path: str, batch_size: int = 6) -> Dict[str, Any]:
