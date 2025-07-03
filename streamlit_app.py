@@ -203,7 +203,7 @@ def display_results_v2(result, user_image_path, total_time):
         st.markdown('<div class="image-container">', unsafe_allow_html=True)
         st.subheader("Best Avatar Match")
         
-        # Display metadata about the best match (minimal, no blue box)
+        # Only display the avatar image, no metadata
         if result['best_match_metadata']:
             metadata = result['best_match_metadata']
             public_url = metadata.get('public_url')
@@ -215,13 +215,6 @@ def display_results_v2(result, user_image_path, total_time):
                     st.image(avatar_img, width=250, caption="Best Match Avatar")
                 except Exception as e:
                     st.error(f"Could not load avatar image: {e}")
-            # Show minimal metadata as plain text (not in a blue box)
-            st.markdown(f"""
-            **Avatar ID:** {result['best_match_avatar_id']}  
-            **Gender:** {metadata.get('gender', 'N/A')}  
-            **Age Group:** {metadata.get('age_group', 'N/A')}  
-            **Filename:** {metadata.get('filename', 'N/A')}
-            """)
         else:
             st.error("Best match metadata not found")
         st.markdown('</div>', unsafe_allow_html=True)
