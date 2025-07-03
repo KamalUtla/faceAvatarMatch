@@ -1,0 +1,131 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project-specific files to ignore
+# Test files
+test_*.py
+test_*.ipynb
+test.ipynb
+
+# Documentation files
+*.md
+!README.md
+
+# Data processing files
+create_avatar_metadata.py
+meta_extract.py
+image_desc.py
+downloader.py
+downloader.log
+
+# Old pipeline files
+avatar_match_pipeline.py
+in_memory_avatar_pipeline.py
+in_memory_avatar_service.py
+llm_response_service.py
+image_utils.py
+
+# Example and utility files
+example_usage.py
+run_app.py
+
+# Data directories (keep only essential ones)
+formal_avatars/
+formal_avatars_square/
+non_formal_avatars/
+downloaded_avatars/
+sq_avatar_meta/
+main/
+
+# Data files
+descriptions.jsonl
+characters.jsonl
+
+# Results and outputs
+test_in_memory_result.json
+tournament_visualization.html
+
+# Test images (keep only essential ones)
+user_test_images/
+
+# Keep only essential files for streamlit_app.py:
+# - streamlit_app.py
+# - avatar_match_pipeline_v2.py
+# - avatar_service.py
+# - in_memory_llm_service.py
+# - avatar_metadata.jsonl
+# - requirements.txt
+# - user_test_images/ghibli.jpg (for testing)
+# - README.md 
