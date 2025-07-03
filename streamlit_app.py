@@ -104,9 +104,9 @@ def show_main_page():
     st.subheader("⚙️ Configuration")
     batch_size = st.slider(
         "Batch Size",
-        min_value=2,
-        max_value=8,
-        value=3,
+        min_value=1,
+        max_value=16,
+        value=8,
         help="Number of avatars to compare at once. Higher values may be faster but less accurate."
     )
     
